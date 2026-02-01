@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAZE Finance | تحكم كامل</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Cairo', 'sans-serif'] },
+                    colors: {
+                        brand: '#3B82F6',
+                        dark: '#0F172A',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #0F172A; color: #E2E8F0; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0F172A; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        .nav-item.active { background-color: rgba(59, 130, 246, 0.1); color: #60A5FA; border-right: 3px solid #60A5FA; }
+    </style>
+</head>
+<body class="h-screen flex overflow-hidden text-sm md:text-base">
+
+    <aside class="w-16 lg:w-64 bg-slate-900 border-l border-slate-800 flex flex-col transition-all z-50">
+        <div class="h-16 flex items-center justify-center lg:justify-start lg:px-6 border-b border-slate-800">
+            <i class="fa-solid fa-layer-group text-blue-500 text-xl"></i>
+            <h1 class="hidden lg:block mr-3 text-lg font-bold">RAZE <span class="text-blue-500">System</span></h1>
+        </div>
+
+        <nav class="flex-1 py-4 space-y-1 overflow-y-auto">
+            <button onclick="App.navigate('dashboard')" id="nav-dashboard" class="nav-item active w-full flex items-center p-3 hover:bg-slate-800 transition-colors">
+                <i class="fa-solid fa-chart-pie w-6 text-center"></i>
+                <span class="hidden lg:block mr-3">الرئيسية</span>
+            </button>
+            <button onclick="App.navigate('wallets')" id="nav-wallets" class="nav-item w-full flex items-center p-3 hover:bg-slate-800 transition-colors">
+                <i class="fa-solid fa-wallet w-6 text-center"></i>
+                <span class="hidden lg:block mr-3">المحافظ</span>
+            </button>
+            <button onclick="App.navigate('transactions')" id="nav-transactions" class="nav-item w-full flex items-center p-3 hover:bg-slate-800 transition-colors">
+                <i class="fa-solid fa-money-bill-transfer w-6 text-center"></i>
+                <span class="hidden lg:block mr-3">المعاملات</span>
+            </button>
+            <button onclick="App.navigate('planned')" id="nav-planned" class="nav-item w-full flex items-center p-3 hover:bg-slate-800 transition-colors">
+                <i class="fa-solid fa-file-invoice-dollar w-6 text-center"></i>
+                <span class="hidden lg:block mr-3">الالتزامات (الخصم)</span>
+            </button>
+            <button onclick="App.navigate('brand')" id="nav-brand" class="nav-item w-full flex items-center p-3 hover:bg-slate-800 transition-colors text-blue-400">
+                <i class="fa-solid fa-shirt w-6 text-center"></i>
+                <span class="hidden lg:block mr-3">RAZE Brand</span>
+            </button>
+            
+            <div class="my-2 border-t border-slate-800 mx-4"></div>
+            
+            <button onclick="App.navigate('settings')" id="nav-settings" class="nav-item w-full flex items-center p-3 hover:bg-slate-800 transition-colors text-slate-300">
+                <i class="fa-solid fa-gear w-6 text-center"></i>
+                <span class="hidden lg:block mr-3">الإعدادات (تحكم كامل)</span>
+            </button>
+        </nav>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-screen overflow-hidden bg-slate-950">
+        
+        <header class="h-16 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 flex items-center justify-between px-6">
+            <h2 id="page-title" class="text-lg font-bold text-white">نظرة عامة</h2>
+            <button onclick="UI.openModal('add-transaction-modal')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-all shadow-lg shadow-blue-500/20">
+                <i class="fa-solid fa-plus"></i> <span class="hidden sm:inline">معاملة جديدة</span>
+            </button>
+        </header>
+
+        <div id="app-content" class="flex-1 overflow-y-auto p-4 lg:p-6 space-y-6 scroll-smooth">
+            </div>
+    </main>
+
+    <div id="add-transaction-modal" class="fixed inset-0 bg-black/80 hidden z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-slate-900 w-full max-w-md rounded-2xl border border-slate-700 shadow-2xl p-6 relative">
+            <button onclick="UI.closeModal('add-transaction-modal')" class="absolute left-4 top-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <h3 class="text-lg font-bold mb-4 text-center">تسجيل حركة مالية</h3>
+            
+            <form onsubmit="App.handleAddTransaction(event)" class="space-y-4">
+                <div class="grid grid-cols-2 gap-2 bg-slate-800 p-1 rounded-lg">
+                    <button type="button" onclick="UI.setTxType('expense')" id="btn-expense" class="py-2 rounded text-sm font-bold bg-red-500 text-white">مصروف</button>
+                    <button type="button" onclick="UI.setTxType('income')" id="btn-income" class="py-2 rounded text-sm font-bold text-slate-400">دخل</button>
+                </div>
+                <input type="hidden" id="tx-type" value="expense">
+
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">المبلغ</label>
+                    <input type="number" id="tx-amount" required class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white focus:border-blue-500 outline-none text-lg font-bold" placeholder="0.00">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">المحفظة</label>
+                        <select id="tx-wallet" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white outline-none text-sm"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">التصنيف</label>
+                        <select id="tx-category" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white outline-none text-sm"></select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">ملاحظات</label>
+                    <input type="text" id="tx-notes" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white outline-none text-sm" placeholder="وصف...">
+                </div>
+
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl mt-2">حفظ</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="add-planned-modal" class="fixed inset-0 bg-black/80 hidden z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-slate-900 w-full max-w-md rounded-2xl border border-slate-700 shadow-2xl p-6 relative">
+            <button onclick="UI.closeModal('add-planned-modal')" class="absolute left-4 top-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <h3 class="text-lg font-bold mb-2 text-center text-orange-400">إضافة التزام (حجز تلقائي)</h3>
+            <p class="text-center text-slate-500 text-xs mb-6">أي مبلغ هتكتبه هنا هيتخصم "وهمياً" من رصيدك المتاح عشان ميتصرفش.</p>
+            
+            <form onsubmit="App.handleAddPlanned(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">اسم الالتزام (مثال: إعلانات)</label>
+                    <input type="text" id="pl-name" required class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">المبلغ المطلوب حجزه</label>
+                    <input type="number" id="pl-amount" required class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white outline-none" placeholder="0.00">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">النوع</label>
+                    <select id="pl-type" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white outline-none">
+                        <option value="brand">التزام للبراند (RAZE)</option>
+                        <option value="personal">التزام شخصي (فواتير/بيت)</option>
+                    </select>
+                </div>
+                <button type="submit" class="w-full bg-orange-600 hover:bg-orange-500 text-white font-bold py-3 rounded-xl mt-2">إضافة للقائمة والحجز</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const DB = {
+            key: 'raze_custom_v2',
+            data: {
+                wallets: [], // User defined
+                categories: [
+                    { name: 'طعام وشراب', type: 'personal' },
+                    { name: 'مواصلات', type: 'personal' },
+                    { name: 'RAZE خامات', type: 'brand' },
+                    { name: 'RAZE إعلانات', type: 'brand' }
+                ], 
+                transactions: [],
+                planned: []
+            },
+            load() {
+                const stored = localStorage.getItem(this.key);
+                if (stored) {
+                    this.data = JSON.parse(stored);
+                } else {
+                    // بيانات افتراضية لو أول مرة يفتح عشان يفهم
+                    this.data.wallets = [
+                        { id: 1, name: 'كاش (جيبي)', balance: 0 },
+                        { id: 2, name: 'فيزا البنك الأهلي', balance: 0 }
+                    ];
+                }
+            },
+            save() {
+                localStorage.setItem(this.key, JSON.stringify(this.data));
+                App.renderCurrentPage();
+            }
+        };
+
+        const App = {
+            currentPage: 'dashboard',
+            init() {
+                DB.load();
+                this.navigate('dashboard');
+            },
+            navigate(page) {
+                this.currentPage = page;
+                document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+                document.getElementById(`nav-${page}`).classList.add('active');
+                
+                const content = document.getElementById('app-content');
+                const title = document.getElementById('page-title');
+
+                if (page === 'dashboard') { title.innerText = 'اللوحة الرئيسية'; this.renderDashboard(content); }
+                else if (page === 'wallets') { title.innerText = 'أرصدة المحافظ'; this.renderWallets(content); }
+                else if (page === 'transactions') { title.innerText = 'سجل الحركات'; this.renderTransactions(content); }
+                else if (page === 'planned') { title.innerText = 'الالتزامات المحجوزة'; this.renderPlanned(content); }
+                else if (page === 'brand') { title.innerText = 'إدارة البراند'; this.renderBrand(content); }
+                else if (page === 'settings') { title.innerText = 'الإعدادات والتحكم'; this.renderSettings(content); }
+            },
+
+            getFinancials() {
+                const totalAssets = DB.data.wallets.reduce((sum, w) => sum + w.balance, 0);
+                const totalPlanned = DB.data.planned.filter(p => !p.paid).reduce((sum, p) => sum + p.amount, 0);
+                const safeBalance = totalAssets - totalPlanned;
+                
+                // Brand Logic
+                const brandIncome = DB.data.transactions
+                    .filter(t => t.type === 'income' && t.category.includes('RAZE'))
+                    .reduce((sum, t) => sum + t.amount, 0);
+                const brandExpense = DB.data.transactions
+                    .filter(t => t.type === 'expense' && t.category.includes('RAZE'))
+                    .reduce((sum, t) => sum + t.amount, 0);
+                
+                return { totalAssets, totalPlanned, safeBalance, brandIncome, brandExpense };
+            },
+
+            // --- RENDER FUNCTIONS ---
+
+            renderDashboard(container) {
+                const fin = this.getFinancials();
+                container.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="bg-slate-800 p-5 rounded-xl border border-slate-700">
+                            <p class="text-slate-400 text-xs">إجمالي ما تملكه فعلياً</p>
+                            <h3 class="text-2xl font-bold text-white mt-1">${UI.formatMoney(fin.totalAssets)}</h3>
+                        </div>
+                        <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 border-r-4 border-r-orange-500">
+                            <p class="text-slate-400 text-xs">التزامات محجوزة (مخصومة)</p>
+                            <h3 class="text-2xl font-bold text-orange-400 mt-1">${UI.formatMoney(fin.totalPlanned)}</h3>
+                            <p class="text-[10px] text-slate-500">مثل فواتير، إعلانات، خامات..</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-emerald-900 to-slate-900 p-5 rounded-xl border border-emerald-500/30 shadow-lg">
+                            <p class="text-emerald-200/70 text-xs">الرصيد الحر (القابل للصرف)</p>
+                            <h3 class="text-3xl font-bold text-emerald-400 mt-1">${UI.formatMoney(fin.safeBalance)}</h3>
+                        </div>
+                    </div>
+                    
+                    <h3 class="font-bold text-white mb-3">نظرة سريعة على المحافظ</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        ${DB.data.wallets.map(w => `
+                            <div class="bg-slate-800 p-3 rounded-lg border border-slate-700">
+                                <p class="text-xs text-slate-400 truncate">${w.name}</p>
+                                <p class="font-bold text-white">${UI.formatMoney(w.balance)}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            },
+
+            renderSettings(container) {
+                container.innerHTML = `
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="bg-slate-800 p-5 rounded-xl border border-slate-700">
+                            <h3 class="font-bold text-white mb-4 border-b border-slate-700 pb-2"><i class="fa-solid fa-wallet text-blue-500"></i> التحكم في المحافظ</h3>
+                            
+                            <form onsubmit="App.addWallet(event)" class="flex gap-2 mb-4">
+                                <input id="new-wallet-name" type="text" placeholder="اسم المحفظة (مثلاً فيزا CIB)" class="flex-1 bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white outline-none" required>
+                                <input id="new-wallet-balance" type="number" placeholder="الرصيد" class="w-20 bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white outline-none" required>
+                                <button type="submit" class="bg-blue-600 text-white px-3 rounded hover:bg-blue-500"><i class="fa-solid fa-plus"></i></button>
+                            </form>
+
+                            <ul class="space-y-2 max-h-60 overflow-y-auto">
+                                ${DB.data.wallets.map((w, idx) => `
+                                    <li class="flex justify-between items-center bg-slate-900 p-2 rounded border border-slate-700/50">
+                                        <span class="text-sm text-slate-200">${w.name} <span class="text-xs text-slate-500">(${UI.formatMoney(w.balance)})</span></span>
+                                        <button onclick="App.deleteWallet(${idx})" class="text-red-400 hover:text-red-300"><i class="fa-solid fa-trash"></i></button>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+
+                        <div class="bg-slate-800 p-5 rounded-xl border border-slate-700">
+                            <h3 class="font-bold text-white mb-4 border-b border-slate-700 pb-2"><i class="fa-solid fa-tags text-purple-500"></i> التحكم في تصنيفات الصرف</h3>
+                            
+                            <form onsubmit="App.addCategory(event)" class="flex gap-2 mb-4">
+                                <input id="new-cat-name" type="text" placeholder="اسم التصنيف (مثلاً تغليف)" class="flex-1 bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white outline-none" required>
+                                <select id="new-cat-type" class="bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white outline-none">
+                                    <option value="personal">شخصي</option>
+                                    <option value="brand">براند</option>
+                                </select>
+                                <button type="submit" class="bg-purple-600 text-white px-3 rounded hover:bg-purple-500"><i class="fa-solid fa-plus"></i></button>
+                            </form>
+
+                            <ul class="space-y-2 max-h-60 overflow-y-auto">
+                                ${DB.data.categories.map((c, idx) => `
+                                    <li class="flex justify-between items-center bg-slate-900 p-2 rounded border border-slate-700/50">
+                                        <span class="text-sm text-slate-200">${c.name} <span class="text-[10px] bg-slate-700 px-1 rounded">${c.type}</span></span>
+                                        <button onclick="App.deleteCategory(${idx})" class="text-red-400 hover:text-red-300"><i class="fa-solid fa-trash"></i></button>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    </div>
+
+                     <div class="mt-6 p-4 bg-red-900/20 border border-red-900/50 rounded-xl text-center">
+                        <button onclick="App.resetData()" class="text-red-400 hover:text-red-300 text-sm flex items-center justify-center gap-2 mx-auto">
+                            <i class="fa-solid fa-triangle-exclamation"></i> فرمتة البرنامج بالكامل (مسح كل شيء)
+                        </button>
+                    </div>
+                `;
+            },
+
+            renderWallets(container) {
+                container.innerHTML = `
+                    <div class="grid gap-4">
+                         ${DB.data.wallets.map(w => `
+                            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex justify-between items-center">
+                                <div>
+                                    <h3 class="text-lg font-bold text-white">${w.name}</h3>
+                                    <p class="text-slate-400 text-xs">رصيد متاح</p>
+                                </div>
+                                <div class="text-xl font-bold text-blue-400">${UI.formatMoney(w.balance)}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            },
+
+            renderPlanned(container) {
+                container.innerHTML = `
+                    <div class="flex justify-between items-center mb-4">
+                        <p class="text-slate-400 text-xs">هنا تضيف الحاجات اللي "لازم" تدفعها (خامات، إعلانات، فواتير). السيستم هيحجز فلوسها فوراً.</p>
+                        <button onclick="UI.openModal('add-planned-modal')" class="bg-orange-600 hover:bg-orange-500 text-white px-3 py-1.5 rounded-lg text-sm shadow">
+                            <i class="fa-solid fa-plus"></i> إضافة التزام
+                        </button>
+                    </div>
+                    <div class="space-y-3">
+                        ${DB.data.planned.map((p, index) => `
+                            <div class="bg-slate-800 p-4 rounded-xl border-r-4 ${p.paid ? 'border-emerald-500 opacity-60' : 'border-orange-500'} flex justify-between items-center">
+                                <div>
+                                    <h4 class="font-bold text-white">${p.name}</h4>
+                                    <p class="text-xs ${p.paid ? 'text-emerald-400' : 'text-orange-400'}">
+                                        ${p.paid ? 'تم الدفع' : 'محجوز من الرصيد'}
+                                    </p>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <span class="font-bold text-white">${UI.formatMoney(p.amount)}</span>
+                                    ${!p.paid ? `<button onclick="App.payPlanned(${index})" class="bg-emerald-600 px-3 py-1 rounded text-xs text-white hover:bg-emerald-500">صرف الآن</button>` : ''}
+                                    <button onclick="App.deletePlanned(${index})" class="text-slate-600 hover:text-red-500"><i class="fa-solid fa-trash"></i></button>
+                                </div>
+                            </div>
+                        `).join('')}
+                        ${DB.data.planned.length === 0 ? '<p class="text-center text-slate-500 py-4">مفيش التزامات محجوزة حالياً</p>' : ''}
+                    </div>
+                `;
+            },
+
+            renderBrand(container) {
+                const fin = this.getFinancials();
+                const net = fin.brandIncome - fin.brandExpense;
+                container.innerHTML = `
+                    <div class="bg-slate-900 p-6 rounded-xl border border-blue-900 mb-6 text-center">
+                        <h2 class="text-2xl font-bold text-white mb-1">RAZE <span class="text-blue-500">Brand</span></h2>
+                        <p class="text-slate-400 text-sm mb-4">صافي الأرباح (دخل - مصروفات)</p>
+                        <p class="text-4xl font-bold ${net >= 0 ? 'text-blue-400' : 'text-red-400'}" dir="ltr">${UI.formatMoney(net)}</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                         <div class="bg-slate-800 p-4 rounded-xl border border-red-900/30">
+                            <p class="text-slate-400 text-xs">مصروفات البراند</p>
+                            <p class="text-xl font-bold text-red-400">${UI.formatMoney(fin.brandExpense)}</p>
+                         </div>
+                         <div class="bg-slate-800 p-4 rounded-xl border border-emerald-900/30">
+                            <p class="text-slate-400 text-xs">مبيعات البراند</p>
+                            <p class="text-xl font-bold text-emerald-400">${UI.formatMoney(fin.brandIncome)}</p>
+                         </div>
+                    </div>
+                `;
+            },
+
+            renderTransactions(container) {
+                const list = [...DB.data.transactions].reverse();
+                container.innerHTML = `
+                    <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+                        ${list.length === 0 ? '<p class="p-6 text-center text-slate-500">لسه مفيش عمليات</p>' : ''}
+                        ${list.map(t => UI.createTransactionRow(t)).join('')}
+                    </div>
+                `;
+            },
+
+            renderCurrentPage() { this.navigate(this.currentPage); },
+
+            // --- DATA MANIPULATION ---
+            
+            addWallet(e) {
+                e.preventDefault();
+                const name = document.getElementById('new-wallet-name').value;
+                const balance = parseFloat(document.getElementById('new-wallet-balance').value);
+                if(name) {
+                    DB.data.wallets.push({ id: Date.now(), name, balance });
+                    DB.save();
+                    e.target.reset();
+                }
+            },
+            deleteWallet(idx) {
+                if(confirm('مسح المحفظة دي؟')) { DB.data.wallets.splice(idx, 1); DB.save(); }
+            },
+
+            addCategory(e) {
+                e.preventDefault();
+                const name = document.getElementById('new-cat-name').value;
+                const type = document.getElementById('new-cat-type').value;
+                if(name) {
+                    DB.data.categories.push({ name, type });
+                    DB.save();
+                    e.target.reset();
+                }
+            },
+            deleteCategory(idx) {
+                if(confirm('مسح التصنيف ده؟')) { DB.data.categories.splice(idx, 1); DB.save(); }
+            },
+
+            handleAddTransaction(e) {
+                e.preventDefault();
+                const type = document.getElementById('tx-type').value;
+                const amount = parseFloat(document.getElementById('tx-amount').value);
+                const walletIdx = document.getElementById('tx-wallet').value; // Returns Index
+                const catName = document.getElementById('tx-category').value;
+                const notes = document.getElementById('tx-notes').value;
+
+                if (!amount || amount <= 0 || walletIdx === "") return alert('تأكد من البيانات');
+
+                const wallet = DB.data.wallets[walletIdx];
+
+                if (type === 'expense') {
+                    if (wallet.balance < amount) return alert('الرصيد في ' + wallet.name + ' غير كافي!');
+                    wallet.balance -= amount;
+                } else {
+                    wallet.balance += amount;
+                }
+
+                DB.data.transactions.push({
+                    id: Date.now(),
+                    type, amount, walletName: wallet.name, category: catName, notes,
+                    date: new Date().toLocaleDateString('ar-EG')
+                });
+                DB.save();
+                UI.closeModal('add-transaction-modal');
+                e.target.reset();
+            },
+
+            handleAddPlanned(e) {
+                e.preventDefault();
+                DB.data.planned.push({
+                    id: Date.now(),
+                    name: document.getElementById('pl-name').value,
+                    amount: parseFloat(document.getElementById('pl-amount').value),
+                    type: document.getElementById('pl-type').value,
+                    paid: false
+                });
+                DB.save();
+                UI.closeModal('add-planned-modal');
+                e.target.reset();
+            },
+
+            payPlanned(index) {
+                if(confirm('هل تريد تأكيد دفع هذا الالتزام وخصمه من محفظة فعلية؟')) {
+                    // Logic to open transaction modal pre-filled could be here, 
+                    // but for simplicity we mark as paid so it stops deducting from "Safe Balance"
+                    // and user should manually record the transaction.
+                    alert('تم تمييزه كمدفوع. لا تنس تسجيل المصروف في قسم "معاملة جديدة" لتخصيمه من المحفظة.');
+                    DB.data.planned[index].paid = true;
+                    DB.save();
+                }
+            },
+            
+            deletePlanned(index) {
+                if(confirm('حذف الالتزام؟')) { DB.data.planned.splice(index, 1); DB.save(); }
+            },
+
+            resetData() {
+                if(confirm('تحذير: هتمسح كل حاجة وتبدأ من الصفر؟')) {
+                    localStorage.removeItem(DB.key);
+                    location.reload();
+                }
+            }
+        };
+
+        const UI = {
+            formatMoney(amount) { return amount.toLocaleString() + ' ج.م'; },
+            openModal(id) { 
+                document.getElementById(id).classList.remove('hidden'); 
+                if(id === 'add-transaction-modal') this.populateSelects();
+            },
+            closeModal(id) { document.getElementById(id).classList.add('hidden'); },
+            
+            populateSelects() {
+                const wSelect = document.getElementById('tx-wallet');
+                const cSelect = document.getElementById('tx-category');
+                
+                wSelect.innerHTML = DB.data.wallets.length ? 
+                    DB.data.wallets.map((w, i) => `<option value="${i}">${w.name} (${w.balance})</option>`).join('') :
+                    '<option value="">أضف محفظة من الإعدادات أولاً</option>';
+
+                cSelect.innerHTML = DB.data.categories.length ?
+                    DB.data.categories.map(c => `<option value="${c.name}">${c.name}</option>`).join('') :
+                    '<option value="عام">عام</option>';
+            },
+
+            setTxType(type) {
+                document.getElementById('tx-type').value = type;
+                document.getElementById('btn-income').className = type === 'income' ? "py-2 rounded text-sm font-bold bg-emerald-500 text-white flex-1" : "py-2 rounded text-sm font-bold text-slate-400 flex-1";
+                document.getElementById('btn-expense').className = type === 'expense' ? "py-2 rounded text-sm font-bold bg-red-500 text-white flex-1" : "py-2 rounded text-sm font-bold text-slate-400 flex-1";
+            },
+
+            createTransactionRow(t) {
+                const isInc = t.type === 'income';
+                return `
+                    <div class="p-4 border-b border-slate-700/50 flex justify-between items-center hover:bg-slate-700/20">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full ${isInc ? 'bg-emerald-500/20 text-emerald-500' : 'bg-red-500/20 text-red-500'} flex items-center justify-center">
+                                <i class="fa-solid ${isInc ? 'fa-arrow-down' : 'fa-arrow-up'}"></i>
+                            </div>
+                            <div>
+                                <p class="text-white font-bold text-sm">${t.category}</p>
+                                <p class="text-slate-500 text-xs">${t.notes || t.walletName}</p>
+                            </div>
+                        </div>
+                        <span class="font-bold ${isInc ? 'text-emerald-400' : 'text-red-400'}" dir="ltr">${isInc ? '+' : '-'} ${UI.formatMoney(t.amount)}</span>
+                    </div>
+                `;
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => App.init());
+    </script>
+</body>
+</html>
